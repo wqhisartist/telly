@@ -31,6 +31,7 @@ public class AddonTemplate extends MeteorAddon {
         Modules.get().add(new WeaponSwap());
         Modules.get().add(new AimAssist());
         Modules.get().add(new AutoDoubleHand());
+        Modules.get().add(new AutoInventoryTotem());
         // Commands
         Commands.add(new CommandExample());
 
