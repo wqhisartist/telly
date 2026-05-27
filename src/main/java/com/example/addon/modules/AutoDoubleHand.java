@@ -73,25 +73,17 @@ public class AutoDoubleHand extends Module {
 
     // ── State ──────────────────────────────────────────────────────────────────
 
-    // The slot we were on before the module switched to totem
-    private int originalSlot = -1;
-    // Whether we are currently holding totem due to this module
-    private boolean holding = false;
+    // Whether this module has already swapped to totem this danger window
+    private boolean swapped = false;
 
     public AutoDoubleHand() {
         super(AddonTemplate.CATEGORY, "auto-double-hand",
-            "Automatically switches to a totem of undying when near an End Crystal or charged Respawn Anchor.");
+            "Automatically switches main hand to a totem of undying when near an End Crystal or charged Respawn Anchor. Never switches back automatically.");
     }
 
     @Override
     public void onDeactivate() {
-        // Restore original slot on disable if we were holding totem
-        if (holding && originalSlot != -1) {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc.player != null) InvUtils.swap(originalSlot, false);
-        }
-        holding      = false;
-        originalSlot = -1;
+        swapped = false;
     }
 
     @EventHandler
@@ -105,39 +97,38 @@ public class AutoDoubleHand extends Module {
             if (gm != GameType.SURVIVAL && gm != GameType.ADVENTURE) return;
         }
 
-        boolean shouldHoldTotem = shouldHoldTotem(mc);
+        boolean inDanger = shouldHoldTotem(mc);
 
-        if (shouldHoldTotem && !holding) {
-            // If there is already a totem in the offhand, the player is protected
-            // regardless of what is in the main hand — but we still swap the main
-            // hand to a totem so both hands have one (double-hand).
-            // Only skip if main hand is already a totem.
+        if (inDanger) {
+            if (swapped) return;
+
+            // If we are already holding a totem in our main hand, we are successfully double-handing
             if (mc.player.getMainHandItem().getItem() == Items.TOTEM_OF_UNDYING) {
-                // Main hand already has totem — track without swapping
-                holding      = true;
-                originalSlot = mc.player.getInventory().getSelectedSlot();
+                swapped = true;
                 return;
             }
 
-            // Search only hotbar slots 0-8 for a totem.
-            // We explicitly skip the offhand so that even if the offhand already
-            // has a totem, we find a second one in the hotbar to double-hand with.
-            FindItemResult totem = InvUtils.findInHotbar(
-                s -> s.getItem() == Items.TOTEM_OF_UNDYING
-            );
-            if (!totem.found()) return; // No totem in hotbar slots 0-8
+            // Scan the entire inventory for a totem, but explicitly ignore the one currently sitting in the offhand
+            FindItemResult totem = InvUtils.find(s -> s.getItem() == Items.TOTEM_OF_UNDYING && s != mc.player.getOffhandItem());
+            if (!totem.found()) return;
 
-            originalSlot = mc.player.getInventory().getSelectedSlot();
-            InvUtils.swap(totem.slot(), false);
-            holding = true;
-
-        } else if (!shouldHoldTotem && holding) {
-            // Danger has passed — restore original slot
-            if (originalSlot != -1) {
-                InvUtils.swap(originalSlot, false);
+            if (totem.isHotbar()) {
+                // If a backup totem is already on the hotbar, simply switch to its slot
+                if (mc.player.getInventory().getSelectedSlot() != totem.slot()) {
+                    InvUtils.swap(totem.slot(), false);
+                }
+            } else {
+                // If the backup totem is in the main inventory, pull it straight into our active hotbar slot
+                InvUtils.move().from(totem.slot()).toHotbar(mc.player.getInventory().getSelectedSlot());
             }
-            holding      = false;
-            originalSlot = -1;
+            
+            swapped = true;
+
+        } else {
+            // Out of danger — reset the flag so the next time danger begins
+            // we swap again. We deliberately do NOT swap back to any previous
+            // slot — the player keeps whatever they are holding.
+            swapped = false;
         }
     }
 
@@ -151,9 +142,6 @@ public class AutoDoubleHand extends Module {
         // ── Crystal check ──────────────────────────────────────────────────────
         if (onCrystal.get()) {
             double r = crystalRange.get();
-            // Search for End Crystal entities in a flat cylinder:
-            // horizontal radius = r, vertical = unbounded downward from player Y
-            // (crystal must be at same Y or below player — i.e. player Y >= crystal Y)
             AABB searchBox = new AABB(px - r, -64, pz - r, px + r, py + 256, pz + r);
             List<EndCrystal> crystals = mc.level.getEntitiesOfClass(EndCrystal.class, searchBox);
 
@@ -161,8 +149,6 @@ public class AutoDoubleHand extends Module {
                 double dx = crystal.getX() - px;
                 double dz = crystal.getZ() - pz;
                 double horizDist = Math.sqrt(dx * dx + dz * dz);
-
-                // Horizontal range check + player must be at same Y or above crystal
                 if (horizDist <= r && py >= crystal.getY()) {
                     return true;
                 }
@@ -172,11 +158,9 @@ public class AutoDoubleHand extends Module {
         // ── Anchor check ───────────────────────────────────────────────────────
         if (onAnchor.get()) {
             double r = anchorRange.get();
-            // Scan block positions in a flat cylinder around the player
-            int ri   = (int) Math.ceil(r);
             int minX = (int) Math.floor(px - r);
             int maxX = (int) Math.floor(px + r);
-            int minY = (int) Math.floor(py) - 2; // check a couple blocks below feet
+            int minY = (int) Math.floor(py) - 2;
             int maxY = (int) Math.floor(py) + 2;
             int minZ = (int) Math.floor(pz - r);
             int maxZ = (int) Math.floor(pz + r);
@@ -186,12 +170,10 @@ public class AutoDoubleHand extends Module {
                     for (int z = minZ; z <= maxZ; z++) {
                         double dx = (x + 0.5) - px;
                         double dz = (z + 0.5) - pz;
-                        double horizDist = Math.sqrt(dx * dx + dz * dz);
-                        if (horizDist > r) continue;
+                        if (Math.sqrt(dx * dx + dz * dz) > r) continue;
 
                         BlockPos pos   = new BlockPos(x, y, z);
                         var      state = mc.level.getBlockState(pos);
-
                         if (state.is(Blocks.RESPAWN_ANCHOR)
                                 && state.getValue(RespawnAnchorBlock.CHARGE) > 0) {
                             return true;
