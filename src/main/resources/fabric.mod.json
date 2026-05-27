@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "id": "addon-template",
   "version": "${version}",
-  "name": "Addon Template",
-  "description": "An addon template for Meteor Client addons.",
+  "name": "Lithium Client",
+  "description": "Tung tung tung sahur brr brr patapim",
   "authors": [
-    "seasnail"
+    "AntiCrystal"
   ],
   "contact": {
     "sources": "https://github.com/MeteorDevelopment/meteor-addon-template"
