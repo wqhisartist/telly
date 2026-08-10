@@ -38,7 +38,6 @@ To update this template to a newer Minecraft version, follow these steps:
 2. Update `gradle/libs.versions.toml` (the versions catalog):
     - Set the version entries to the new versions. Common keys to update are:
         - `versions.minecraft` - Minecraft version
-        - `versions.yarn-mappings` - Yarn mappings
         - `versions.fabric-loader` - Fabric loader version
         - `versions.meteor` - Meteor Client snapshot version
     - If your addon depends on other libraries listed under the `[libraries]` section, update their versions there as
@@ -53,7 +52,7 @@ To update this template to a newer Minecraft version, follow these steps:
       - Windows (cmd.exe): `gradlew.bat wrapper --gradle-version <version> && gradlew.bat wrapper`
     - This updates and regenerates the Gradle Wrapper scripts (`gradlew`, `gradlew.bat`, etc.) for the specified version.
 5. Update your source code:
-    - Adjust for Minecraft or Yarn mapping changes: method names, imports, mixins, etc.
+    - Adjust for Minecraft source changes: method names, imports, mixins, etc.
     - Check for Meteor Client API changes that may affect your addon by comparing against the
       [master branch](https://github.com/MeteorDevelopment/meteor-client/tree/master).
 6. Build and test:
