@@ -1,36 +1,23 @@
 {
   "schemaVersion": 1,
-  "id": "addon-template",
+  "id": "tellybridge",
   "version": "${version}",
-  "name": "Addon Template",
-  "description": "An addon template for Meteor Client addons.",
-  "authors": [
-    "seasnail"
-  ],
-  "contact": {
-    "sources": "https://github.com/MeteorDevelopment/meteor-addon-template"
-  },
-  "icon": "assets/template/icon.png",
+  "name": "TellyBridge Full",
+  "description": "Full Telly Bridge addon for Meteor 1.21.8 (Single Player Only)",
+  "authors": ["Learner"],
+  "contact": {},
+  "license": "MIT",
+  "icon": "assets/tellybridge/icon.png",
   "environment": "client",
   "entrypoints": {
     "meteor": [
-      "com.example.addon.AddonTemplate"
+      "com.example.tellybridge.TellyBridgeAddon"
     ]
   },
-  "mixins": [
-    "addon-template.mixins.json"
-  ],
-  "custom": {
-    "meteor-client:color": "225,25,25",
-    "modmenu": {
-      "parent": {
-        "id": "meteor-client"
-      }
-    }
-  },
+  "mixins": [],
   "depends": {
-    "java": ">=${jdk_version}",
-    "minecraft": "${minecraft_version}",
-    "meteor-client": "*"
+    "fabric-loader": ">=${loader_version}",
+    "minecraft": "~${minecraft_version}",
+    "meteor-client": ">=0.5.8"
   }
 }
