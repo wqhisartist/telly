@@ -11,10 +11,10 @@ jobs:
         with:
           persist-credentials: false
 
-      - - name: Set up JDK
-  uses: actions/setup-java@v4
-  with:
-    java-version: '17'
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
 
       - name: Build with Gradle
         run: ./gradlew build
